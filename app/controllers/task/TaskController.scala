@@ -1,20 +1,29 @@
 package controllers.task
 
-import javax.inject.Singleton
+import javax.inject.{Inject, Singleton}
 
+import domains.Task
 import play.api.libs.json.Json
 import play.api.mvc.{Action, Controller}
+import services.task.TaskService
+
+import play.api.libs.concurrent.Execution.Implicits._
+
+import scala.util.control.NonFatal
 
 @Singleton
-class TaskController extends Controller {
+class TaskController @Inject() (val taskService: TaskService) extends Controller {
 
-  def all = Action {
-    // TODO: implement
-    Ok(Json.arr(
-      Json.obj("title" -> "title1", "description" -> "description1", "dueDate" -> "2016-06-26T17:00:00"),
-      Json.obj("title" -> "title2", "description" -> "description2", "dueDate" -> "2016-06-26T17:00:01"),
-      Json.obj("title" -> "title3", "description" -> "description3", "dueDate" -> "2016-06-26T17:00:02")
-    ))
+  implicit val taskWrites = Json.writes[Task]
+
+  def all = Action.async {
+    val future = for {
+      tasks <- taskService.findAll
+    } yield Ok(Json.toJson(tasks))
+
+    future.recover {
+      case NonFatal(e) => InternalServerError(Json.obj("errorMessage" -> "Unexpected error occured."))
+    }
   }
 
 }
