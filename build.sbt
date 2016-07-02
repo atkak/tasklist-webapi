@@ -14,3 +14,11 @@ libraryDependencies ++= Seq(
 )
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
+
+lazy val dockerBuild = taskKey[Unit]("Build docker container with app")
+
+dockerBuild := {
+  clean.value
+  stage.value
+  "docker build -t xiongmaomaomao/tasklist-webapi ." !
+}
