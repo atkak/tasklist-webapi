@@ -3,6 +3,7 @@ package infrastructures.task
 import java.time.LocalDateTime
 
 import awscala.dynamodbv2.{AttributeType, DynamoDB, Table}
+import infrastructures.DynamoTableNameResolver
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import play.api.Application
 import play.api.inject.bind
@@ -17,10 +18,12 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
     .overrides(bind[DynamoDB].toInstance(dynamoDB))
     .build
 
+  lazy val resolver = app.injector.instanceOf[DynamoTableNameResolver]
+
   def withDynamo(testCode: Table => Any): Unit = {
     import TasksTableDef._
 
-    val tableMeta = dynamoDB.createTable(TableName, "id" -> AttributeType.String)
+    val tableMeta = dynamoDB.createTable(resolver.entireTableName(TableName), "id" -> AttributeType.String)
     try {
       testCode(tableMeta.table)
     } finally {

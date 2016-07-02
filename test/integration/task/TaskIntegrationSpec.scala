@@ -1,19 +1,28 @@
 package integration.task
 
-import awscala.dynamodbv2.{DynamoDB, AttributeType, Table}
+import awscala.dynamodbv2.{DynamoDB, Table}
+import infrastructures.DynamoTableNameResolver
 import infrastructures.task.TasksTableDef
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
-import play.api.libs.json.{JsValue, JsString, JsArray}
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.{JsArray, JsString}
 import play.api.test.Helpers._
 
 class TaskIntegrationSpec extends PlaySpec with OneServerPerSuite {
 
   implicit def dynamoDB = app.injector.instanceOf[DynamoDB]
 
+  override implicit lazy val app: Application = new GuiceApplicationBuilder()
+    .configure("dynamodb.table-prefix" -> "TaskList-test")
+    .build
+
+  lazy val resolver = app.injector.instanceOf[DynamoTableNameResolver]
+
   def withDynamo(testCode: Table => Any): Unit = {
     import TasksTableDef._
 
-    val table = dynamoDB.table(TableName).get
+    val table = dynamoDB.table(resolver.entireTableName(TableName)).get
     // ensure record does not exist
     table.scan(Seq.empty).foreach { item =>
       for {
