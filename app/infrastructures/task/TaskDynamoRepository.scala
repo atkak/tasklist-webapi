@@ -1,23 +1,23 @@
 package infrastructures.task
 
 import java.time.LocalDateTime
-import javax.inject.{Inject, Named}
+import javax.inject.Inject
 
-import awscala.dynamodbv2.{DynamoDB, Item}
+import awscala.dynamodbv2.Item
 import domains.{Task, TaskRepository}
 import play.api.Logger
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 trait TaskDynamoRepositoryAdaptor {
 
   import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
-  def taskDynamoDao: TaskDynamoDao
+  def tasksDynamoDao: TasksDynamoDao
 
   def findAll: Future[Seq[Task]] = for {
-    items <- taskDynamoDao.scanAll
+    items <- tasksDynamoDao.scanAll
   } yield items.flatMap(itemMapper)
 
   private def itemMapper(item: Item): Option[Task] = {
@@ -42,27 +42,6 @@ trait TaskDynamoRepositoryAdaptor {
 
 }
 
-class TaskDynamoRepository @Inject() (val taskDynamoDao: TaskDynamoDao)
+class TaskDynamoRepository @Inject() (val tasksDynamoDao: TasksDynamoDao)
   extends TaskDynamoRepositoryAdaptor
     with TaskRepository
-
-class TaskDynamoDao @Inject() (
-  implicit private val dynamoDB: DynamoDB,
-  @Named("Dynamo") implicit private val executionContext: ExecutionContext
-) extends TasksTableDef {
-
-  def scanAll: Future[Seq[Item]] = {
-    val table = dynamoDB.table(TableName).get
-
-    Future { table.scan(Seq.empty) }
-  }
-
-}
-
-trait TasksTableDef {
-
-  val TableName = "TaskList-Tasks"
-
-}
-
-object TasksTableDef extends TasksTableDef
