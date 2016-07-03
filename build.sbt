@@ -22,3 +22,11 @@ dockerBuild := {
   stage.value
   "docker build -t xiongmaomaomao/tasklist-webapi ." !
 }
+
+lazy val ebBuild = taskKey[Unit]("Build artifact for uploading to eb")
+
+ebBuild := {
+  import java.io.File
+  val inputs = Seq(new File("Dockerrun.aws.json") -> "Dockerrun.aws.json")
+  IO.zip(inputs, new File("target/eb/artifact.zip"))
+}
