@@ -2,18 +2,21 @@ package services.task
 
 import javax.inject.Inject
 
-import domains.{CreateTask, Task, TaskRepository}
+import domains.{TaskFactory, CreateTask, Task, TaskRepository}
 
 import scala.concurrent.Future
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
-class TaskService @Inject() (private val taskRepository: TaskRepository) {
+class TaskService @Inject() (
+  private val taskRepository: TaskRepository,
+  private val taskFactory: TaskFactory
+  ) {
 
   def findAll: Future[Seq[Task]] = taskRepository.findAll
 
-  // TODO: implement
-  def create(task: CreateTask): Future[Task] = {
-    import play.api.libs.concurrent.Execution.Implicits.defaultContext
-    Future { Task("testId", task.title, task.description, task.dueDate) }
+  def create(createTask: CreateTask): Future[Task] = {
+    val task = taskFactory.newTask(createTask)
+    taskRepository.create(task).map { _ => task }
   }
 
 }

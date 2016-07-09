@@ -6,4 +6,6 @@ trait TaskRepository {
 
   def findAll: Future[Seq[Task]]
 
+  def create(task: Task): Future[Unit]
+
 }
