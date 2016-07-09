@@ -3,6 +3,7 @@ package infrastructures.task
 import java.time.LocalDateTime
 
 import awscala.dynamodbv2.{AttributeType, DynamoDB, Table}
+import domains.Task
 import infrastructures.DynamoTableNameResolver
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import play.api.Application
@@ -96,4 +97,71 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
     }
 
   }
+
+  "create" when {
+
+    "with description" must {
+
+      val task = Task(
+        id = "testId",
+        title = "testTitle",
+        description = Some("testDescription"),
+        dueDate = LocalDateTime.of(2016, 7, 9, 17, 0, 0)
+      )
+
+      "insert new task record" in withDynamo { table =>
+        // exercise
+        await(repository.create(task))
+
+        // verify
+        val result = table.get("testId")
+        result.isDefined mustBe true
+
+        def finder(name: String): Option[String] =
+          result.get.attributes.find(_.name == name).flatMap {
+            _.value.s
+          }
+
+        finder("id").isDefined mustBe true
+        finder("id").get mustEqual "testId"
+        finder("title").isDefined mustBe true
+        finder("title").get mustEqual "testTitle"
+        finder("description").isDefined mustBe true
+        finder("description").get mustEqual "testDescription"
+        finder("dueDate").isDefined mustBe true
+        finder("dueDate").get mustEqual "2016-07-09T17:00:00"
+      }
+
+    }
+
+    "without description" must {
+
+      val task = Task(
+        id = "testId",
+        title = "testTitle",
+        description = None,
+        dueDate = LocalDateTime.of(2016, 7, 9, 17, 0, 0)
+      )
+
+      "not have description in the record" in withDynamo { table =>
+        // exercise
+        await(repository.create(task))
+
+        // verify
+        val result = table.get("testId")
+        result.isDefined mustBe true
+
+        def finder(name: String): Option[String] =
+          result.get.attributes.find(_.name == name).flatMap { _.value.s }
+
+        finder("id").isDefined mustBe true
+        finder("title").isDefined mustBe true
+        finder("description").isDefined mustBe false
+        finder("dueDate").isDefined mustBe true
+      }
+
+    }
+
+  }
+
 }

@@ -1,11 +1,11 @@
 package infrastructures.task
 
-import javax.inject.{Named, Inject}
+import javax.inject.{Inject, Named}
 
-import awscala.dynamodbv2.{Item, DynamoDB}
+import awscala.dynamodbv2.{DynamoDB, Item}
 import infrastructures.DynamoTableNameResolver
 
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
 
 class TasksDynamoDao @Inject()(
     implicit private val dynamoDB: DynamoDB,
@@ -19,6 +19,24 @@ class TasksDynamoDao @Inject()(
     val table = dynamoDB.table(tableName).get
 
     Future { table.scan(Seq.empty) }
+  }
+
+  def create(
+    id: String,
+    title: String,
+    description: Option[String],
+    dueDate: String
+  ): Future[Unit] = {
+    val table = dynamoDB.table(tableName).get
+
+    var attributes = Seq(
+      "title" -> title,
+      "dueDate" -> dueDate
+    )
+
+    for (desc <- description) attributes +:= ("description" -> desc)
+
+    Future { table.put(id, attributes: _*) }
   }
 
 }
