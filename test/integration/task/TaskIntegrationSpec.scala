@@ -76,11 +76,18 @@ class TaskIntegrationSpec extends PlaySpec with OneServerPerSuite {
 
       val json = response.json
 
-      (json \ "id").get.as[String] mustBe "testId"
+      (json \ "id").get.as[String] must have length 16
     }
 
-    "create new task" ignore {
-      // TODO: verify data storage
+    "create new task" in withDynamo { table =>
+      // exercise
+      val response = await(wsUrl("/tasks")
+        .withHeaders(CONTENT_TYPE -> JSON)
+        .post("""{"title":"testTitle","description":"testDescription","dueDate":"2016-07-09T16:00:00"}"""))
+
+      // verify
+      val result = table.scan(Seq.empty)
+      result.seq must have size 1
     }
 
   }
