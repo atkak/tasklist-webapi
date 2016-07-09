@@ -36,7 +36,7 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
 
   "findAll" when {
 
-    "there are existing records" should {
+    "there are existing records" must {
 
       "returns expected tasks" in withDynamo { table =>
         // setup fixture
@@ -49,7 +49,7 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
         val tasks = await(repository.findAll)
 
         // verify
-        tasks must have size (3)
+        tasks must have size 3
 
         val task = tasks.find { _.id == "testId0" }
 
@@ -61,19 +61,19 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
 
     }
 
-    "there are no existing records" should {
+    "there are no existing records" must {
 
       "returns expected tasks" in withDynamo { table =>
         // exercise
         val tasks = await(repository.findAll)
 
         // verify
-        tasks must have size (0)
+        tasks must have size 0
       }
 
     }
 
-    "there is a record which has an empty description" should {
+    "there is a record which has an empty description" must {
 
       "returns expected tasks" in withDynamo { table =>
         // setup fixture
@@ -85,7 +85,7 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
         val tasks = await(repository.findAll)
 
         // verify
-        tasks must have size (2)
+        tasks must have size 2
 
         val hasDescriptionTask = tasks.find { _.id == "testId0" }.get
         val hasNotDescriptionTask = tasks.find { _.id == "testId1" }.get
