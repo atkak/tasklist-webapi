@@ -68,6 +68,7 @@ class TaskIntegrationSpec extends PlaySpec with OneServerPerSuite {
     "return expected response" in withDynamo { table =>
       // exercise
       val response = await(wsUrl("/tasks")
+        .withHeaders(CONTENT_TYPE -> JSON)
         .post("""{"title":"testTitle","description":"testDescription","dueDate":"2016-07-09T16:00:00"}"""))
 
       // verify

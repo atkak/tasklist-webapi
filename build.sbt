@@ -10,7 +10,8 @@ libraryDependencies ++= Seq(
   ws,
   "com.github.seratch" %% "awscala" % "0.5.+",
   "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test,
-  "org.mockito" % "mockito-core" % "1.10.19" % Test
+  "org.mockito" % "mockito-core" % "1.10.19" % Test,
+  "org.scalacheck" %% "scalacheck" % "1.13.0" % Test
 )
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"

@@ -2,21 +2,23 @@ package controllers.task
 
 import java.time.LocalDateTime
 
-import domains.Task
+import domains.{CreateTask, Task}
+import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.TestData
+import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.play.{OneAppPerTest, PlaySpec}
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsArray, Json}
+import play.api.libs.json.{JsArray, JsNull, JsValue, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.task.TaskService
 
 import scala.concurrent.Future
 
-class TaskControllerSpec extends PlaySpec with OneAppPerTest {
+class TaskControllerSpec extends PlaySpec with OneAppPerTest with TableDrivenPropertyChecks {
 
   override def newAppForTest(testData: TestData): Application = new GuiceApplicationBuilder()
     .overrides(bind[TaskService].toInstance(mock(classOf[TaskService])))
@@ -60,6 +62,94 @@ class TaskControllerSpec extends PlaySpec with OneAppPerTest {
 
       val json = Json.parse(contentAsString(result))
       (json \ "errorMessage").as[String] must include("Unexpected error")
+    }
+
+  }
+
+  "create" when {
+
+    val fakeRequest = FakeRequest(POST, "/tasks")
+        .withHeaders(CONTENT_TYPE -> JSON)
+
+    "receiving valid request" must {
+
+      "return expected response" in {
+        val mockTaskService = app.injector.instanceOf[TaskService]
+        when(mockTaskService.create(any[CreateTask])).thenReturn(Future.successful(
+          Task(
+            id = "testId",
+            title = "testTitle",
+            description = Some("testDescription"),
+            dueDate = LocalDateTime.of(2016, 6, 30, 22, 0, 0)
+          )
+        ))
+
+        val requestBody = Json.obj("title" -> "testTitle", "description" -> "testDescription", "dueDate" -> "2016-07-09T17:00:00")
+
+        val Some(result) = route(app, fakeRequest.withJsonBody(requestBody))
+
+        status(result) mustEqual OK
+        contentType(result) mustEqual Some(JSON)
+
+        val json = Json.parse(contentAsString(result))
+        (json \ "id").as[String] mustEqual "testId"
+      }
+
+    }
+
+    "validating for request body" must {
+
+      val expectations = Table(
+        ("requestBody", "statusCode"),
+        (Json.obj("title" -> "testTitle", "description" -> JsNull, "dueDate" -> "2016-07-09T17:00:00"), OK),
+        (Json.obj("title" -> "testTitle", "dueDate" -> "2016-07-09T17:00:00"), OK),
+        (Json.obj("title" -> "", "description" -> "testDescription", "dueDate" -> "2016-07-09T17:00:00"), BAD_REQUEST),
+        (Json.obj("title" -> JsNull, "description" -> "testDescription", "dueDate" -> "2016-07-09T17:00:00"), BAD_REQUEST),
+        (Json.obj("description" -> "testDescription", "dueDate" -> "2016-07-09T17:00:00"), BAD_REQUEST),
+        (Json.obj("title" -> "testTitle", "description" -> "testDescription", "dueDate" -> "invalidDateFormat"), BAD_REQUEST),
+        (Json.obj("title" -> "testTitle", "description" -> "testDescription", "dueDate" -> JsNull), BAD_REQUEST),
+        (Json.obj("title" -> "testTitle", "description" -> "testDescription"), BAD_REQUEST),
+        (Json.obj(), BAD_REQUEST)
+      )
+
+      "return expected status code" in forAll(expectations) {
+        (requestBody: JsValue, statusCode: Int) =>
+
+        val mockTaskService = app.injector.instanceOf[TaskService]
+        when(mockTaskService.create(any[CreateTask])).thenReturn(Future.successful(
+          Task(
+            id = "testId",
+            title = "testTitle",
+            description = None,
+            dueDate = LocalDateTime.of(2016, 6, 30, 22, 0, 0)
+          )
+        ))
+
+        val Some(result) = route(app, fakeRequest.withJsonBody(requestBody))
+
+        status(result) mustEqual statusCode
+        contentType(result) mustEqual Some(JSON)
+      }
+
+    }
+
+    "exception occurs in service" must {
+
+      "return expected response" in {
+        val mockTaskService = app.injector.instanceOf[TaskService]
+        when(mockTaskService.create(any[CreateTask])).thenReturn(Future.failed(new RuntimeException))
+
+        val requestBody = Json.obj("title" -> "testTitle", "description" -> "testDescription", "dueDate" -> "2016-07-09T17:00:00")
+
+        val Some(result) = route(app, fakeRequest.withJsonBody(requestBody))
+
+        status(result) mustEqual INTERNAL_SERVER_ERROR
+        contentType(result) mustEqual Some(JSON)
+
+        val json = Json.parse(contentAsString(result))
+        (json \ "errorMessage").as[String] must include("Unexpected error")
+      }
+
     }
 
   }
