@@ -36,7 +36,7 @@ class TaskIntegrationSpec extends PlaySpec with OneServerPerSuite {
 
   "GET /tasks" must {
 
-    "returns expected response" in withDynamo { table =>
+    "return expected response" in withDynamo { table =>
       // setup fixture
       (0 to 2).foreach { i =>
         table.put(s"testId${i}", "title" -> s"testTitle${i}",
@@ -59,6 +59,27 @@ class TaskIntegrationSpec extends PlaySpec with OneServerPerSuite {
       (json.get \ "title").get.as[String] mustBe "testTitle1"
       (json.get \ "description").get.as[String] mustBe "testDescription1"
       (json.get \ "dueDate").get.as[String] mustBe "2016-06-30T22:00:01"
+    }
+
+  }
+
+  "POST /tasks" must {
+
+    "return expected response" in withDynamo { table =>
+      // exercise
+      val response = await(wsUrl("/tasks")
+        .post("""{"title":"testTitle","description":"testDescription","dueDate":"2016-07-09T16:00:00"}"""))
+
+      // verify
+      response.status mustBe OK
+
+      val json = response.json
+
+      (json \ "id").get.as[String] mustBe "testId"
+    }
+
+    "create new task" ignore {
+      // TODO: verify data storage
     }
 
   }

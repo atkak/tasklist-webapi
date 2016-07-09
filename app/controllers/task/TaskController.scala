@@ -9,6 +9,7 @@ import services.task.TaskService
 
 import play.api.libs.concurrent.Execution.Implicits._
 
+import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 @Singleton
@@ -24,6 +25,10 @@ class TaskController @Inject() (val taskService: TaskService) extends Controller
     future.recover {
       case NonFatal(e) => InternalServerError(Json.obj("errorMessage" -> "Unexpected error occured."))
     }
+  }
+
+  def create = Action.async {
+    Future { Ok(Json.obj("id" -> "testId")) }
   }
 
 }
