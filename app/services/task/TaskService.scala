@@ -2,7 +2,7 @@ package services.task
 
 import javax.inject.Inject
 
-import domains.{TaskFactory, CreateTask, Task, TaskRepository}
+import domains.task.{TaskRepository, TaskFactory, Task, CreateTask}
 
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits.defaultContext

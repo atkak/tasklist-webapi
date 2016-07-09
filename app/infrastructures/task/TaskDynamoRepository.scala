@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 import awscala.dynamodbv2.Item
-import domains.{Task, TaskRepository}
+import domains.task.{TaskRepository, Task}
 import play.api.Logger
 
 import scala.concurrent.Future

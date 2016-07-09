@@ -3,7 +3,7 @@ package infrastructures.task
 import java.time.LocalDateTime
 
 import awscala.dynamodbv2.{AttributeType, DynamoDB, Table}
-import domains.Task
+import domains.task.Task
 import infrastructures.DynamoTableNameResolver
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import play.api.Application

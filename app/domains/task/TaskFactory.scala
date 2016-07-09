@@ -1,4 +1,4 @@
-package domains
+package domains.task
 
 import scala.util.Random
 

@@ -3,7 +3,7 @@ package controllers.task
 import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 
-import domains.{CreateTask, Task}
+import domains.task.{Task, CreateTask}
 import play.api.data.validation.ValidationError
 import play.api.libs.json.{Reads, JsPath, JsError, Json}
 import play.api.mvc.{Result, BodyParsers, Action, Controller}

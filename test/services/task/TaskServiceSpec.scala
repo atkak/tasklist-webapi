@@ -3,6 +3,7 @@ package services.task
 import java.time.LocalDateTime
 
 import domains._
+import domains.task._
 import org.scalatest.{MustMatchers, WordSpec}
 import org.mockito.Mockito._
 import org.mockito.Matchers._

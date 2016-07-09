@@ -3,7 +3,7 @@ import javax.inject.Named
 import akka.actor.ActorSystem
 import awscala.dynamodbv2.DynamoDB
 import com.google.inject.{AbstractModule, Provides}
-import domains.{RandomIdTaskFactory, TaskFactory, TaskRepository}
+import domains.task.{TaskRepository, RandomIdTaskFactory, TaskFactory}
 import infrastructures.task.TaskDynamoRepository
 
 import scala.concurrent.ExecutionContext
