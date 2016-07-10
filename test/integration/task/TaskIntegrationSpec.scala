@@ -92,4 +92,21 @@ class TaskIntegrationSpec extends PlaySpec with OneServerPerSuite {
 
   }
 
+  "POST /tasks/:id/complete" must {
+
+    "return expected response" in withDynamo { table =>
+      // exercise
+      val response = await(wsUrl("/tasks/testId/complete").execute(POST))
+
+      // verify
+      response.status mustBe OK
+      response.body must have length 0
+    }
+
+    "complete task" ignore {
+      // TODO: verify data storage
+    }
+
+  }
+
 }

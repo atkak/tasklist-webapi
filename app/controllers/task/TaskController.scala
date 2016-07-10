@@ -47,6 +47,10 @@ class TaskController @Inject() (val taskService: TaskService) extends Controller
     result.fold(jsonValidationErrorResultAsync, createTask)
   }
 
+  def complete(id: String) = Action.async {
+    Future { Ok }
+  }
+
 }
 
 object TaskController {

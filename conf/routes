@@ -4,5 +4,6 @@
 
 GET     /tasks                      controllers.task.TaskController.all
 POST    /tasks                      controllers.task.TaskController.create
+POST    /tasks/:id/complete         controllers.task.TaskController.complete(id: String)
 
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
