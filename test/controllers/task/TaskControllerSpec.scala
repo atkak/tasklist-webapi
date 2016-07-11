@@ -12,6 +12,7 @@ import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsArray, JsNull, JsValue, Json}
+import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.task.TaskService
@@ -154,4 +155,62 @@ class TaskControllerSpec extends PlaySpec with OneAppPerTest with TableDrivenPro
 
   }
 
+  "complete" when {
+
+    def fakeRequest(id: String) = FakeRequest(POST, s"/tasks/${id}/complete")
+
+    "receiving valid request" must {
+
+      "return expected response" in {
+        val mockTaskService = app.injector.instanceOf[TaskService]
+        when(mockTaskService.complete(anyString())).thenReturn(Future.successful(()))
+
+        val Some(result) = route(app, fakeRequest("abcdefghijklmnop"))
+
+        status(result) mustEqual OK
+      }
+
+    }
+
+    "validating for path variable" must {
+
+      val expectations = Table(
+        Tuple3("id", "statusCode", "contentType"),
+        Tuple3("abcdefghijklmnop", OK, None),
+        Tuple3("abcdefghijklmno", BAD_REQUEST, Some(JSON)),
+        Tuple3("abcdefghijklmnopq", BAD_REQUEST, Some(JSON))
+      )
+
+      "return expected status code" in forAll(expectations) {
+        (id: String, statusCode: Int, ct: Option[String]) =>
+
+          val mockTaskService = app.injector.instanceOf[TaskService]
+          when(mockTaskService.complete(anyString)).thenReturn(Future.successful(()))
+
+          val Some(result) = route(app, fakeRequest(id))
+
+          status(result) mustEqual statusCode
+          contentType(result) mustEqual ct
+      }
+
+    }
+
+    "exception occurs in service" must {
+
+      "return expected response" in {
+        val mockTaskService = app.injector.instanceOf[TaskService]
+        when(mockTaskService.complete(anyString)).thenReturn(Future.failed(new RuntimeException))
+
+        val Some(result) = route(app, fakeRequest("abcdefghijklmnop"))
+
+        status(result) mustEqual INTERNAL_SERVER_ERROR
+        contentType(result) mustEqual Some(JSON)
+
+        val json = Json.parse(contentAsString(result))
+        (json \ "errorMessage").as[String] must include("Unexpected error")
+      }
+
+    }
+
+  }
 }

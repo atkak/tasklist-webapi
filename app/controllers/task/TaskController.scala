@@ -4,6 +4,12 @@ import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 
 import domains.task.{Task, CreateTask}
+import jto.validation.{To, Path, From}
+import jto.validation.jsonast.Rules
+import play.api.data._
+import play.api.data.Form
+import play.api.data.Forms._
+import play.api.data.format.Formats._
 import play.api.data.validation.ValidationError
 import play.api.libs.json.{Reads, JsPath, JsError, Json}
 import play.api.mvc.{Result, BodyParsers, Action, Controller}
@@ -48,7 +54,17 @@ class TaskController @Inject() (val taskService: TaskService) extends Controller
   }
 
   def complete(id: String) = Action.async {
-    Future { Ok }
+    def completeTask(id: String): Future[Result] = {
+      val future = for {
+        _ <- taskService.complete(id)
+      } yield Ok
+
+      future.recover {
+        nonFatalErrorHandler
+      }
+    }
+
+    completeParamsRule.validate(id).fold(validationErrorResultAsync, completeTask)
   }
 
 }
@@ -57,6 +73,7 @@ object TaskController {
 
   import play.api.mvc.Results._
   import play.api.libs.json.Reads._
+  import jto.validation.playjson.Writes._
 
   implicit val createTaskReads: Reads[CreateTask] = (
     (JsPath \ "title").read[String](minLength[String](1)) and
@@ -66,6 +83,8 @@ object TaskController {
 
   implicit val dueDateReads = Reads.localDateReads("yyyy-MM-ddTHH:mm:ss")
 
+  val completeParamsRule = Rules.minLength(16) |+| Rules.maxLength(16)
+
   type JsonValidationError = Seq[(JsPath, Seq[ValidationError])]
 
   val jsonValidationErrorResult: JsonValidationError => Result =
@@ -73,6 +92,12 @@ object TaskController {
 
   val jsonValidationErrorResultAsync: JsonValidationError => Future[Result] =
     errors => Future { jsonValidationErrorResult(errors) }
+
+  val validationErrorResultAsync: Seq[(Path, Seq[jto.validation.ValidationError])] => Future[Result] =
+    errors => Future { BadRequest(Json.obj(
+        "errorMessage" -> "Invalid parameters exist in your request.",
+        "errorDetails" -> To(errors))
+    )}
 
   val nonFatalErrorHandler: PartialFunction[Throwable, Result] = {
     case NonFatal(e) => InternalServerError(Json.obj("errorMessage" -> "Unexpected error occured."))

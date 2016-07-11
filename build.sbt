@@ -9,6 +9,9 @@ scalaVersion := "2.11.7"
 libraryDependencies ++= Seq(
   ws,
   "com.github.seratch" %% "awscala" % "0.5.+",
+  "io.github.jto" %% "validation-core"      % "2.0",
+  "io.github.jto" %% "validation-playjson"  % "2.0",
+  "io.github.jto" %% "validation-jsonast"   % "2.0",
   "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test,
   "org.mockito" % "mockito-core" % "1.10.19" % Test,
   "org.scalacheck" %% "scalacheck" % "1.13.0" % Test
