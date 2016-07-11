@@ -3,7 +3,7 @@ package infrastructures.task
 import java.time.LocalDateTime
 
 import awscala.dynamodbv2.{AttributeType, DynamoDB, Table}
-import domains.task.Task
+import domains.task.{TaskDoesNotExistException, TaskAlreadyCompletedException, Task}
 import infrastructures.DynamoTableNameResolver
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import play.api.Application
@@ -24,7 +24,13 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
   def withDynamo(testCode: Table => Any): Unit = {
     import TasksTableDef._
 
-    val tableMeta = dynamoDB.createTable(resolver.entireTableName(TableName), "id" -> AttributeType.String)
+    // ensure table does not exist
+    val tableName = resolver.entireTableName(TableName)
+    for {
+      tableMeta <- dynamoDB.describe(tableName)
+    } dynamoDB.deleteTable(tableMeta.table)
+
+    val tableMeta = dynamoDB.createTable(tableName, "id" -> AttributeType.String)
     try {
       testCode(tableMeta.table)
     } finally {
@@ -158,6 +164,65 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
         finder("title").isDefined mustBe true
         finder("description").isDefined mustBe false
         finder("dueDate").isDefined mustBe true
+      }
+
+    }
+
+  }
+
+  "complete" when {
+
+    "trying to mark a task that completed is false" must {
+
+      "succeed" in withDynamo { table =>
+        // setup
+        table.put("testId", "title" -> "testTitle",
+          "description" -> "testDescription", "dueDate" -> "2016-06-30T22:00:00",
+          "completed" -> false)
+
+        // exercise
+        await(repository.complete("testId"))
+
+        // verify
+        val result = table.get("testId")
+        def completed = result.get.attributes.find(_.name == "completed").flatMap(_.value.bl)
+        completed.isDefined mustBe true
+        completed.get mustBe true
+      }
+
+    }
+
+    "trying to mark a task that completed is true" must {
+
+      "fail" in withDynamo { table =>
+        // setup
+        table.put("testId", "title" -> "testTitle",
+          "description" -> "testDescription", "dueDate" -> "2016-06-30T22:00:00",
+          "completed" -> true)
+
+        // exercise && verify
+        intercept[TaskAlreadyCompletedException] {
+          await(repository.complete("testId"))
+        }
+
+        val result = table.get("testId")
+        def completed = result.get.attributes.find(_.name == "completed").flatMap(_.value.bl)
+        completed.isDefined mustBe true
+        completed.get mustBe true
+      }
+
+    }
+
+    "trying to mark a task which does not exist" must {
+
+      "fail" in withDynamo { table =>
+        // exercise && verify
+        intercept[TaskDoesNotExistException] {
+          await(repository.complete("testId"))
+        }
+
+        val result = table.get("testId")
+        result.isDefined mustBe false
       }
 
     }

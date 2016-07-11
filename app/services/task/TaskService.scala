@@ -19,6 +19,6 @@ class TaskService @Inject() (
     taskRepository.create(task).map { _ => task }
   }
 
-  def complete(id: String): Future[Unit] = Future.successful(())
+  def complete(id: String): Future[Unit] = taskRepository.complete(id)
 
 }

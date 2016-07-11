@@ -5,7 +5,8 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 import awscala.dynamodbv2.Item
-import domains.task.{TaskRepository, Task}
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException
+import domains.task.{TaskDoesNotExistException, TaskAlreadyCompletedException, TaskRepository, Task}
 import play.api.Logger
 
 import scala.concurrent.Future
@@ -24,6 +25,20 @@ trait TaskDynamoRepositoryAdaptor {
   def create(task: Task): Future[Unit] =
     tasksDynamoDao.create(task.id, task.title, task.description,
       task.dueDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+
+  def complete(id: String): Future[Unit] = {
+      tasksDynamoDao.exists(id)
+        .flatMap { exists =>
+          if (exists) Future.successful(())
+          else Future.failed(new TaskDoesNotExistException)
+        }
+        .flatMap { _ =>
+          tasksDynamoDao.markAsCompleted(id)
+        }
+        .recover {
+          case e: ConditionalCheckFailedException => throw new TaskAlreadyCompletedException
+        }
+  }
 
   private def itemMapper(item: Item): Option[Task] = {
     def finder(name: String): Option[String] =
