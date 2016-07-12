@@ -35,6 +35,7 @@ class TaskServiceSpec extends WordSpec with MustMatchers {
       result.title mustBe "testTitle"
       result.description mustBe Some("testDescription")
       result.dueDate mustBe LocalDateTime.of(2016, 7, 9, 17, 0, 0)
+      result.completed mustBe false
     }
 
   }

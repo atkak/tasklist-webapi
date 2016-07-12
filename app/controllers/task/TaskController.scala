@@ -3,20 +3,15 @@ package controllers.task
 import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 
-import domains.task.{TaskAlreadyCompletedException, TaskDoesNotExistException, Task, CreateTask}
-import jto.validation.{To, Path, From}
+import domains.task.{CreateTask, Task, TaskAlreadyCompletedException, TaskDoesNotExistException}
 import jto.validation.jsonast.Rules
-import play.api.data._
-import play.api.data.Form
-import play.api.data.Forms._
-import play.api.data.format.Formats._
+import jto.validation.{Path, To}
 import play.api.data.validation.ValidationError
-import play.api.libs.json.{Reads, JsPath, JsError, Json}
-import play.api.mvc.{Result, BodyParsers, Action, Controller}
-import services.task.TaskService
-
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.functional.syntax._
+import play.api.libs.json.{JsError, JsPath, Json, Reads}
+import play.api.mvc.{Action, BodyParsers, Controller, Result}
+import services.task.TaskService
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -73,9 +68,9 @@ class TaskController @Inject() (val taskService: TaskService) extends Controller
 
 object TaskController {
 
-  import play.api.mvc.Results._
-  import play.api.libs.json.Reads._
   import jto.validation.playjson.Writes._
+  import play.api.libs.json.Reads._
+  import play.api.mvc.Results._
 
   implicit val createTaskReads: Reads[CreateTask] = (
     (JsPath \ "title").read[String](minLength[String](1)) and

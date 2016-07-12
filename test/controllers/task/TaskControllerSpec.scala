@@ -35,7 +35,8 @@ class TaskControllerSpec extends PlaySpec with OneAppPerTest with TableDrivenPro
             id = s"testId${i}",
             title = s"testTitle${i}",
             description = Some(s"testDescription${i}"),
-            dueDate = LocalDateTime.of(2016, 6, 30, 22, 0, i)
+            dueDate = LocalDateTime.of(2016, 6, 30, 22, 0, i),
+            completed = i % 2 == 0
           )
       ))
 
@@ -50,6 +51,7 @@ class TaskControllerSpec extends PlaySpec with OneAppPerTest with TableDrivenPro
       (jsonArray(0) \ "title").as[String] mustEqual "testTitle0"
       (jsonArray(0) \ "description").as[String] mustEqual "testDescription0"
       (jsonArray(0) \ "dueDate").as[String] mustEqual "2016-06-30T22:00:00"
+      (jsonArray(0) \ "completed").as[Boolean] mustEqual true
     }
 
     "return expected response when exception occurs" in {
@@ -81,7 +83,8 @@ class TaskControllerSpec extends PlaySpec with OneAppPerTest with TableDrivenPro
             id = "testId",
             title = "testTitle",
             description = Some("testDescription"),
-            dueDate = LocalDateTime.of(2016, 6, 30, 22, 0, 0)
+            dueDate = LocalDateTime.of(2016, 6, 30, 22, 0, 0),
+            completed = false
           )
         ))
 
@@ -122,7 +125,8 @@ class TaskControllerSpec extends PlaySpec with OneAppPerTest with TableDrivenPro
             id = "testId",
             title = "testTitle",
             description = None,
-            dueDate = LocalDateTime.of(2016, 6, 30, 22, 0, 0)
+            dueDate = LocalDateTime.of(2016, 6, 30, 22, 0, 0),
+            completed = false
           )
         ))
 

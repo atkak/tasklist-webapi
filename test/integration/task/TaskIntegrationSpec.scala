@@ -40,7 +40,9 @@ class TaskIntegrationSpec extends PlaySpec with OneServerPerSuite {
       // setup fixture
       (0 to 2).foreach { i =>
         table.put(s"testId${i}", "title" -> s"testTitle${i}",
-          "description" -> s"testDescription${i}", "dueDate" -> s"2016-06-30T22:00:0${i}")
+          "description" -> s"testDescription${i}", "dueDate" -> s"2016-06-30T22:00:0${i}",
+          "completed" -> (i % 2 == 0)
+        )
       }
 
       // exercise
@@ -59,6 +61,7 @@ class TaskIntegrationSpec extends PlaySpec with OneServerPerSuite {
       (json.get \ "title").get.as[String] mustBe "testTitle1"
       (json.get \ "description").get.as[String] mustBe "testDescription1"
       (json.get \ "dueDate").get.as[String] mustBe "2016-06-30T22:00:01"
+      (json.get \ "completed").get.as[Boolean] mustBe false
     }
 
   }

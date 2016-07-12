@@ -26,13 +26,15 @@ class TasksDynamoDao @Inject()(
     id: String,
     title: String,
     description: Option[String],
-    dueDate: String
+    dueDate: String,
+    completed: Boolean
   ): Future[Unit] = {
     val table = dynamoDB.table(tableName).get
 
     var attributes = Seq(
       "title" -> title,
-      "dueDate" -> dueDate
+      "dueDate" -> dueDate,
+      "completed" -> completed
     )
 
     for (desc <- description) attributes +:= ("description" -> desc)

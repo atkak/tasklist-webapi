@@ -48,7 +48,8 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
         // setup fixture
         (0 to 2).foreach { i =>
           table.put(s"testId${i}", "title" -> s"testTitle${i}",
-            "description" -> s"testDescription${i}", "dueDate" -> s"2016-06-30T22:00:0${i}")
+            "description" -> s"testDescription${i}", "dueDate" -> s"2016-06-30T22:00:0${i}",
+            "completed" -> true)
         }
 
         // exercise
@@ -63,6 +64,7 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
         task.get.title mustEqual "testTitle0"
         task.get.description mustEqual Some("testDescription0")
         task.get.dueDate mustEqual LocalDateTime.of(2016, 6, 30, 22, 0, 0)
+        task.get.completed mustEqual true
       }
 
     }
@@ -84,8 +86,9 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
       "returns expected tasks" in withDynamo { table =>
         // setup fixture
         table.put(s"testId0", "title" -> s"testTitle0",
-          "description" -> s"testDescription0", "dueDate" -> s"2016-06-30T22:00:00")
-        table.put(s"testId1", "title" -> s"testTitle1", "dueDate" -> s"2016-06-30T22:00:01")
+          "description" -> s"testDescription0", "dueDate" -> s"2016-06-30T22:00:00",
+          "completed" -> false)
+        table.put(s"testId1", "title" -> s"testTitle1", "dueDate" -> s"2016-06-30T22:00:01", "completed" -> true)
 
         // exercise
         val tasks = await(repository.findAll)
@@ -112,7 +115,8 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
         id = "testId",
         title = "testTitle",
         description = Some("testDescription"),
-        dueDate = LocalDateTime.of(2016, 7, 9, 17, 0, 0)
+        dueDate = LocalDateTime.of(2016, 7, 9, 17, 0, 0),
+        completed = false
       )
 
       "insert new task record" in withDynamo { table =>
@@ -146,7 +150,8 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
         id = "testId",
         title = "testTitle",
         description = None,
-        dueDate = LocalDateTime.of(2016, 7, 9, 17, 0, 0)
+        dueDate = LocalDateTime.of(2016, 7, 9, 17, 0, 0),
+        completed = false
       )
 
       "not have description in the record" in withDynamo { table =>
@@ -158,12 +163,13 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
         result.isDefined mustBe true
 
         def finder(name: String): Option[String] =
-          result.get.attributes.find(_.name == name).flatMap { _.value.s }
+          result.get.attributes.find(_.name == name).flatMap(_.value.s)
 
         finder("id").isDefined mustBe true
         finder("title").isDefined mustBe true
         finder("description").isDefined mustBe false
         finder("dueDate").isDefined mustBe true
+        result.get.attributes.find(_.name == "completed").flatMap(_.value.bl).isDefined mustBe true
       }
 
     }

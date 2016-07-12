@@ -8,7 +8,8 @@ trait TaskFactory { self: TaskIdIssuer =>
     id = newId(),
     title = createTask.title,
     description = createTask.description,
-    dueDate = createTask.dueDate
+    dueDate = createTask.dueDate,
+    completed = false
   )
 
 }

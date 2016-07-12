@@ -24,7 +24,7 @@ trait TaskDynamoRepositoryAdaptor {
 
   def create(task: Task): Future[Unit] =
     tasksDynamoDao.create(task.id, task.title, task.description,
-      task.dueDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+      task.dueDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), task.completed)
 
   def complete(id: String): Future[Unit] = {
       tasksDynamoDao.exists(id)
@@ -42,7 +42,7 @@ trait TaskDynamoRepositoryAdaptor {
 
   private def itemMapper(item: Item): Option[Task] = {
     def finder(name: String): Option[String] =
-      item.attributes.find(_.name == name).flatMap { _.value.s }
+      item.attributes.find(_.name == name).flatMap(_.value.s)
 
     try {
       Some(
@@ -50,7 +50,8 @@ trait TaskDynamoRepositoryAdaptor {
           id = finder("id").get,
           title = finder("title").get,
           description = finder("description"),
-          dueDate = LocalDateTime.parse(finder("dueDate").get)
+          dueDate = LocalDateTime.parse(finder("dueDate").get),
+          completed = item.attributes.find(_.name == "completed").flatMap(_.value.bl).get
         )
       )
     } catch {
