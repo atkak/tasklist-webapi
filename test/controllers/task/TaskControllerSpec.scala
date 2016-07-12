@@ -2,7 +2,7 @@ package controllers.task
 
 import java.time.LocalDateTime
 
-import domains.task.{Task, CreateTask}
+import domains.task.{TaskAlreadyCompletedException, TaskDoesNotExistException, Task, CreateTask}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.TestData
@@ -197,17 +197,25 @@ class TaskControllerSpec extends PlaySpec with OneAppPerTest with TableDrivenPro
 
     "exception occurs in service" must {
 
-      "return expected response" in {
+      val expectaions = Table(
+        ("exception", "statusCode", "message"),
+        (new TaskDoesNotExistException(), CONFLICT, "not found"),
+        (new TaskAlreadyCompletedException(), CONFLICT, "already completed"),
+        (new RuntimeException(), INTERNAL_SERVER_ERROR, "Unexpected")
+      )
+
+      "return expected response" in forAll(expectaions) {
+        (exception: Exception, statusCode: Int, message: String) =>
         val mockTaskService = app.injector.instanceOf[TaskService]
-        when(mockTaskService.complete(anyString)).thenReturn(Future.failed(new RuntimeException))
+        when(mockTaskService.complete(anyString)).thenReturn(Future.failed(exception))
 
         val Some(result) = route(app, fakeRequest("abcdefghijklmnop"))
 
-        status(result) mustEqual INTERNAL_SERVER_ERROR
+        status(result) mustEqual statusCode
         contentType(result) mustEqual Some(JSON)
 
         val json = Json.parse(contentAsString(result))
-        (json \ "errorMessage").as[String] must include("Unexpected error")
+        (json \ "errorMessage").as[String] must include(message)
       }
 
     }

@@ -3,7 +3,7 @@ package controllers.task
 import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 
-import domains.task.{Task, CreateTask}
+import domains.task.{TaskAlreadyCompletedException, TaskDoesNotExistException, Task, CreateTask}
 import jto.validation.{To, Path, From}
 import jto.validation.jsonast.Rules
 import play.api.data._
@@ -60,6 +60,8 @@ class TaskController @Inject() (val taskService: TaskService) extends Controller
       } yield Ok
 
       future.recover {
+        taskDoesNotExistExceptionHandler orElse
+        taskAlreadyCompletedExceptionHandler orElse
         nonFatalErrorHandler
       }
     }
@@ -99,8 +101,19 @@ object TaskController {
         "errorDetails" -> To(errors))
     )}
 
+  val taskDoesNotExistExceptionHandler: PartialFunction[Throwable, Result] = {
+    case e: TaskDoesNotExistException =>
+      Conflict(Json.obj("errorMessage" -> "The task was not found."))
+  }
+
+  val taskAlreadyCompletedExceptionHandler: PartialFunction[Throwable, Result] = {
+    case e: TaskAlreadyCompletedException =>
+      Conflict(Json.obj("errorMessage" -> "The task has been already completed."))
+  }
+
   val nonFatalErrorHandler: PartialFunction[Throwable, Result] = {
-    case NonFatal(e) => InternalServerError(Json.obj("errorMessage" -> "Unexpected error occured."))
+    case NonFatal(e) =>
+      InternalServerError(Json.obj("errorMessage" -> "Unexpected error occured."))
   }
 
 }
