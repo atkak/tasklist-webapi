@@ -24,25 +24,15 @@ class TaskController @Inject() (val taskService: TaskService) extends Controller
   implicit val taskWrites = Json.writes[Task]
 
   def all = Action.async {
-    val future = for {
+    for {
       tasks <- taskService.findAll
     } yield Ok(Json.toJson(tasks))
-
-    future.recover {
-      nonFatalErrorHandler
-    }
   }
 
   def create = Action.async(BodyParsers.parse.json) { implicit request =>
-    def createTask(createTask: CreateTask): Future[Result] = {
-      val future = for {
-        task <- taskService.create(createTask)
-      } yield Ok(Json.toJson(task))
-
-      future.recover {
-        nonFatalErrorHandler
-      }
-    }
+    def createTask(createTask: CreateTask): Future[Result] = for {
+      task <- taskService.create(createTask)
+    } yield Ok(Json.toJson(task))
 
     val result = request.body.validate[CreateTask]
     result.fold(jsonValidationErrorResultAsync, createTask)
@@ -56,8 +46,7 @@ class TaskController @Inject() (val taskService: TaskService) extends Controller
 
       future.recover {
         taskDoesNotExistExceptionHandler orElse
-        taskAlreadyCompletedExceptionHandler orElse
-        nonFatalErrorHandler
+        taskAlreadyCompletedExceptionHandler
       }
     }
 
@@ -104,11 +93,6 @@ object TaskController {
   val taskAlreadyCompletedExceptionHandler: PartialFunction[Throwable, Result] = {
     case e: TaskAlreadyCompletedException =>
       Conflict(Json.obj("errorMessage" -> "The task has been already completed."))
-  }
-
-  val nonFatalErrorHandler: PartialFunction[Throwable, Result] = {
-    case NonFatal(e) =>
-      InternalServerError(Json.obj("errorMessage" -> "Unexpected error occured."))
   }
 
 }

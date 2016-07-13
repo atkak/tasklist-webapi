@@ -54,19 +54,6 @@ class TaskControllerSpec extends PlaySpec with OneAppPerTest with TableDrivenPro
       (jsonArray(0) \ "completed").as[Boolean] mustEqual true
     }
 
-    "return expected response when exception occurs" in {
-      val mockTaskService = app.injector.instanceOf[TaskService]
-      when(mockTaskService.findAll).thenReturn(Future.failed(new RuntimeException))
-
-      val Some(result) = route(app, FakeRequest(GET, "/tasks"))
-
-      status(result) mustEqual INTERNAL_SERVER_ERROR
-      contentType(result) mustEqual Some(JSON)
-
-      val json = Json.parse(contentAsString(result))
-      (json \ "errorMessage").as[String] must include("Unexpected error")
-    }
-
   }
 
   "create" when {
@@ -138,25 +125,6 @@ class TaskControllerSpec extends PlaySpec with OneAppPerTest with TableDrivenPro
 
     }
 
-    "exception occurs in service" must {
-
-      "return expected response" in {
-        val mockTaskService = app.injector.instanceOf[TaskService]
-        when(mockTaskService.create(any[CreateTask])).thenReturn(Future.failed(new RuntimeException))
-
-        val requestBody = Json.obj("title" -> "testTitle", "description" -> "testDescription", "dueDate" -> "2016-07-09T17:00:00")
-
-        val Some(result) = route(app, fakeRequest.withJsonBody(requestBody))
-
-        status(result) mustEqual INTERNAL_SERVER_ERROR
-        contentType(result) mustEqual Some(JSON)
-
-        val json = Json.parse(contentAsString(result))
-        (json \ "errorMessage").as[String] must include("Unexpected error")
-      }
-
-    }
-
   }
 
   "complete" when {
@@ -204,8 +172,7 @@ class TaskControllerSpec extends PlaySpec with OneAppPerTest with TableDrivenPro
       val expectaions = Table(
         ("exception", "statusCode", "message"),
         (new TaskDoesNotExistException(), CONFLICT, "not found"),
-        (new TaskAlreadyCompletedException(), CONFLICT, "already completed"),
-        (new RuntimeException(), INTERNAL_SERVER_ERROR, "Unexpected")
+        (new TaskAlreadyCompletedException(), CONFLICT, "already completed")
       )
 
       "return expected response" in forAll(expectaions) {
