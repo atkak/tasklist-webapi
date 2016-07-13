@@ -4,8 +4,6 @@ import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 
 import domains.task.{CreateTask, Task, TaskAlreadyCompletedException, TaskDoesNotExistException}
-import jto.validation.jsonast.Rules
-import jto.validation.{Path, To}
 import play.api.data.validation.ValidationError
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.functional.syntax._
@@ -14,7 +12,6 @@ import play.api.mvc.{Action, BodyParsers, Controller, Result}
 import services.task.TaskService
 
 import scala.concurrent.Future
-import scala.util.control.NonFatal
 
 @Singleton
 class TaskController @Inject() (val taskService: TaskService) extends Controller {
@@ -39,25 +36,24 @@ class TaskController @Inject() (val taskService: TaskService) extends Controller
   }
 
   def complete(id: String) = Action.async {
-    def completeTask(id: String): Future[Result] = {
+    if (id.length != 16) {
+      Future.successful(BadRequest(Json.obj("errorMessage" -> "Invalid parameters exist in your request.")))
+    } else {
       val future = for {
         _ <- taskService.complete(id)
       } yield Ok
 
       future.recover {
         taskDoesNotExistExceptionHandler orElse
-        taskAlreadyCompletedExceptionHandler
+          taskAlreadyCompletedExceptionHandler
       }
     }
-
-    completeParamsRule.validate(id).fold(validationErrorResultAsync, completeTask)
   }
 
 }
 
 object TaskController {
 
-  import jto.validation.playjson.Writes._
   import play.api.libs.json.Reads._
   import play.api.mvc.Results._
 
@@ -69,8 +65,6 @@ object TaskController {
 
   implicit val dueDateReads = Reads.localDateReads("yyyy-MM-ddTHH:mm:ss")
 
-  val completeParamsRule = Rules.minLength(16) |+| Rules.maxLength(16)
-
   type JsonValidationError = Seq[(JsPath, Seq[ValidationError])]
 
   val jsonValidationErrorResult: JsonValidationError => Result =
@@ -78,12 +72,6 @@ object TaskController {
 
   val jsonValidationErrorResultAsync: JsonValidationError => Future[Result] =
     errors => Future { jsonValidationErrorResult(errors) }
-
-  val validationErrorResultAsync: Seq[(Path, Seq[jto.validation.ValidationError])] => Future[Result] =
-    errors => Future { BadRequest(Json.obj(
-        "errorMessage" -> "Invalid parameters exist in your request.",
-        "errorDetails" -> To(errors))
-    )}
 
   val taskDoesNotExistExceptionHandler: PartialFunction[Throwable, Result] = {
     case e: TaskDoesNotExistException =>
