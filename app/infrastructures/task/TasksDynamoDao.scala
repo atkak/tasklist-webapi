@@ -51,18 +51,15 @@ class TasksDynamoDao @Inject()(
   def markAsCompleted(id: String): Future[Unit] = {
     val table = dynamoDB.table(tableName).get
 
-    val attribute = Seq(
-      "id" -> id,
-      "completed" -> true
-    )
-
     val expected = new ExpectedAttributeValue().withValue {
       val value = new AttributeValue()
       value.setBOOL(false)
       value
     }
 
-    Future { dynamoDB.putConditional(table.name, attribute: _*)(Seq("completed" -> expected))}
+    import infrastructures.DynamoDBExtension._
+
+    Future { dynamoDB.updateConditional(table, id, "completed" -> true)("completed" -> expected)}
   }
 
 }

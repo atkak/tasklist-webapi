@@ -191,6 +191,14 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
 
         // verify
         val result = table.get("testId")
+
+        def finder(name: String): Option[String] =
+          result.get.attributes.find(_.name == name).flatMap(_.value.s)
+
+        finder("id").isDefined mustBe true
+        finder("title").isDefined mustBe true
+        finder("description").isDefined mustBe true
+        finder("dueDate").isDefined mustBe true
         def completed = result.get.attributes.find(_.name == "completed").flatMap(_.value.bl)
         completed.isDefined mustBe true
         completed.get mustBe true
@@ -212,6 +220,14 @@ class TaskDynamoRepositorySpec extends PlaySpec with OneAppPerSuite {
         }
 
         val result = table.get("testId")
+
+        def finder(name: String): Option[String] =
+          result.get.attributes.find(_.name == name).flatMap(_.value.s)
+
+        finder("id").isDefined mustBe true
+        finder("title").isDefined mustBe true
+        finder("description").isDefined mustBe true
+        finder("dueDate").isDefined mustBe true
         def completed = result.get.attributes.find(_.name == "completed").flatMap(_.value.bl)
         completed.isDefined mustBe true
         completed.get mustBe true
